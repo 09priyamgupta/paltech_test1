@@ -1,0 +1,7 @@
+<launch>
+    <!-- Image Publisher Node -->
+    <node name="image_publisher" pkg="rumex_detection" type="image_publisher.py" output="screen"/>
+    
+    <!-- Rumex Detector Node -->
+    <node name="rumex_detector" pkg="rumex_detection" type="rumex_detector.py" output="screen"/>
+</launch>

@@ -1,0 +1,2 @@
+rumex_detection
+-DCATKIN_DEVEL_PREFIX=/home/priyam/Desktop/paltech_internship/devel -DCMAKE_INSTALL_PREFIX=/home/priyam/Desktop/paltech_internship/install -G Unix Makefiles

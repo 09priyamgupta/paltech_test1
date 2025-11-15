@@ -1,0 +1,8 @@
+prefix=/usr/local
+
+Name: rumex_detection
+Description: Description of rumex_detection
+Version: 0.0.0
+Cflags: 
+Libs: -L${prefix}/lib 
+Requires: 

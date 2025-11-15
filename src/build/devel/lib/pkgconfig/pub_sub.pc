@@ -1,0 +1,8 @@
+prefix=/home/priyam/Desktop/paltech_internship/src/build/devel
+
+Name: pub_sub
+Description: Description of pub_sub
+Version: 0.0.0
+Cflags: 
+Libs: -L${prefix}/lib 
+Requires: 
