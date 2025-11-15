@@ -146,6 +146,26 @@ python3.10 yolo.py
 - Currently static image processing.
 - Python 3.10 + ROS Noetic conflict handled by reinstalling PyTorch and YOLO libraries manually.
 
+## What I'm Proud Of, Challenges, and Future Work
+**What I am proud of:**
+* I managed to implement a complete pipeline from raw images to plant center coordinates in just 2 hours.
+* The system successfully detects individual Rumex leaves, clusters them into plants, and estimates plant centers.
+* Results are saved in multiple formats (images, JSON, CSV), making it easy to analyze and visualize outputs.
+* I integrated YOLO11m with ROS, and handled adaptive mask resizing and DBSCAN clustering dynamically.
+
+**Challenges:**
+* I had to work with two versions of Python (3.8 for ROS Noetic and 3.10 for AI libraries), which caused a lot of dependency conflicts with PyTorch and YOLO.
+* Mask resizing and DBSCAN clustering parameters required quick experimentation due to limited time.
+* Due to the tight time limit, I could not implement advanced features like real-time video processing or a web dashboard.
+
+**What I could achieve with a full week:**
+* Resolve all Python and library conflicts properly and unify the environment.
+* Optimize performance with GPU acceleration, batch processing, and model quantization.
+* Implement multi-camera synchronization, overlapping plant handling, and confidence scoring.
+* Add a real-time dashboard with ROS web_video_server and rosbridge for monitoring results.
+* Integrate plant size, health estimation, and growth tracking over time.
+
+
 ## Conclusion
 Demonstrates a complete pipeline for agricultural plant detection, from leaf detection to plant center estimation, with ROS integration and standalone operation.
 
