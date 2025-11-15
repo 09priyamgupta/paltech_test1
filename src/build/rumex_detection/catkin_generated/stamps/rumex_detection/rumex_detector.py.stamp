@@ -21,9 +21,9 @@ class RumexDetector:
         # Subscriber for images
         self.subscriber = rospy.Subscriber('camera/image_raw', Image, self.image_callback, queue_size=1)
         
-        # Publisher for plant centers
+        # Publisher for plant centers - ROS1 syntax
         self.detection_pub = rospy.Publisher('plant_centers', Float32MultiArray, queue_size=10)
-        self.result_pub = self.create_publisher(Image, 'detection_result', 10)
+        self.result_pub = rospy.Publisher('detection_result', Image, queue_size=10)
         
         self.bridge = CvBridge()
         
@@ -48,7 +48,7 @@ class RumexDetector:
     
     def save_detection_results(self, original_image, result_image, masks, plants, processing_time, image_name=None):
         """
-            Save detection results to the results folder
+        Save detection results to the results folder
         """
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         
@@ -66,22 +66,25 @@ class RumexDetector:
         result_filename = self.results_path / f"{image_name}_result.jpg"
         cv2.imwrite(str(result_filename), cv2.cvtColor(result_image, cv2.COLOR_RGB2BGR))
         
-        # Save leaf-only image
-        leaf_image = original_image.copy()
-        for mask in masks:
-            color = np.random.randint(0, 255, 3)
-            mask_bool = mask.astype(bool)
-            overlay = leaf_image.copy()
-            overlay[mask_bool] = color
-            leaf_image = cv2.addWeighted(leaf_image, 0.7, overlay, 0.3, 0)
+        # Only save leaf image if there are leaves detected
+        if len(masks) > 0:
+            leaf_image = original_image.copy()
+            for mask in masks:
+                color = np.random.randint(0, 255, 3)
+                mask_bool = mask.astype(bool)
+                overlay = leaf_image.copy()
+                overlay[mask_bool] = color
+                leaf_image = cv2.addWeighted(leaf_image, 0.7, overlay, 0.3, 0)
+                
+                mask_uint8 = (mask * 255).astype(np.uint8)
+                contours, _ = cv2.findContours(mask_uint8, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+                if contours:
+                    cv2.drawContours(leaf_image, contours, -1, color.tolist(), 2)
             
-            mask_uint8 = (mask * 255).astype(np.uint8)
-            contours, _ = cv2.findContours(mask_uint8, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-            if contours:
-                cv2.drawContours(leaf_image, contours, -1, color.tolist(), 2)
-        
-        leaf_filename = self.results_path / f"{image_name}_leaves.jpg"
-        cv2.imwrite(str(leaf_filename), cv2.cvtColor(leaf_image, cv2.COLOR_RGB2BGR))
+            leaf_filename = self.results_path / f"{image_name}_leaves.jpg"
+            cv2.imwrite(str(leaf_filename), cv2.cvtColor(leaf_image, cv2.COLOR_RGB2BGR))
+        else:
+            leaf_filename = None
         
         # Save detection data as JSON
         detection_data = {
@@ -125,10 +128,15 @@ class RumexDetector:
             for i, plant in enumerate(plants):
                 f.write(f"{i+1},{plant['center'][0]:.2f},{plant['center'][1]:.2f},{plant['num_leaves']}\n")
         
-        rospy.loginfo(f"Saved detection results for {image_name}:")
-        rospy.loginfo(f"  - Images: {original_filename.name}, {result_filename.name}, {leaf_filename.name}")
-        rospy.loginfo(f"  - Data: {json_filename.name}, {csv_filename.name}")
-        rospy.loginfo(f"  - Stats: {len(masks)} leaves, {len(plants)} plants, {processing_time:.2f}s processing time")
+        # Log what was saved
+        log_message = f"Saved detection results for {image_name}:"
+        log_message += f"\n  - Images: {original_filename.name}, {result_filename.name}"
+        if leaf_filename:
+            log_message += f", {leaf_filename.name}"
+        log_message += f"\n  - Data: {json_filename.name}, {csv_filename.name}"
+        log_message += f"\n  - Stats: {len(masks)} leaves, {len(plants)} plants, {processing_time:.2f}s processing time"
+        
+        rospy.loginfo(log_message)
     
     def image_callback(self, msg):
         start_time = time.time()
@@ -149,7 +157,8 @@ class RumexDetector:
             
             plant_centers = []
             result_image = cv_image_rgb.copy()
-            plants = [] 
+            plants = []  # Store plant data for saving
+            masks = []   # Initialize masks as empty list
             
             if len(results) > 0 and results[0].masks is not None:
                 # Get and resize masks
@@ -238,6 +247,9 @@ class RumexDetector:
                             cv2.putText(result_image, f'Plant {plant_num}', 
                                        (int(min_x), int(min_y) - 10), 
                                        cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 0, 0), 2)
+            else:
+                # No detections found
+                rospy.loginfo(f"No leaves detected in image {image_name}")
             
             # Save detection results
             processing_time = time.time() - start_time
